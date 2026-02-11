@@ -1,0 +1,267 @@
+:root {
+  --bg: #f4efe8;
+  --panel: #fffaf3;
+  --text: #1f1a17;
+  --muted: #655f5b;
+  --accent: #1e8e68;
+  --accent-soft: #dff3eb;
+  --danger: #c53b3b;
+  --border: #e2d7ca;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Pretendard", "Noto Sans KR", sans-serif;
+  background: radial-gradient(circle at top left, #fcecd8, var(--bg));
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.app {
+  width: min(680px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 16px 40px rgba(40, 24, 7, 0.12);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+header p {
+  margin: 8px 0 20px;
+  color: var(--muted);
+}
+
+.date-row {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.date-row input[type="date"] {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.todo-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+input,
+button {
+  font: inherit;
+}
+
+#todo-input {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  background: #ede4d7;
+  color: var(--text);
+}
+
+.todo-form button {
+  background: var(--accent);
+  color: white;
+}
+
+.controls {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+#clear-completed {
+  color: var(--danger);
+  background: #fbeaea;
+}
+
+.todo-list {
+  list-style: none;
+  margin: 18px 0 8px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.todo-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  background: #fff;
+}
+
+.todo-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.todo-item label {
+  line-height: 1.35;
+}
+
+.todo-item.completed label {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.delete-btn {
+  background: #f7efef;
+  color: var(--danger);
+}
+
+.count {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.stats-collapsible {
+  margin-top: 18px;
+}
+
+.stats-collapsible > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  font-weight: 600;
+}
+
+.stats-collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+
+.stats {
+  margin-top: 10px;
+  padding: 14px 14px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.stats h2 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.week-chart {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.week-bar-item {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.week-label,
+.week-value {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.week-bar-wrap {
+  height: 10px;
+  border-radius: 999px;
+  background: #ede4d7;
+  overflow: hidden;
+}
+
+.week-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #53c69e, var(--accent));
+}
+
+.history {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+.history h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.history-item {
+  grid-template-columns: auto 1fr;
+}
+
+.history-marker {
+  display: inline-block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+@media (max-width: 600px) {
+  .app {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .date-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .todo-form {
+    grid-template-columns: 1fr;
+  }
+
+  .todo-form button {
+    width: 100%;
+  }
+}
