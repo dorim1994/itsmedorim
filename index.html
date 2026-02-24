@@ -1,62 +1,14 @@
-<!doctype html>
-<html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>투두 앱</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <main class="app">
-      <header>
-        <h1>ToDo list</h1>
-        <p>날짜를 선택해서 할 일을 관리하세요.</p>
-      </header>
-
-      <section class="date-row">
-        <label for="todo-date">기준 날짜</label>
-        <input id="todo-date" type="date" />
-      </section>
-
-      <form id="todo-form" class="todo-form">
-        <input
-          id="todo-input"
-          type="text"
-          placeholder="할 일을 입력하세요"
-          autocomplete="off"
-          maxlength="120"
-          required
-        />
-        <button type="submit">추가</button>
-      </form>
-
-      <section class="controls">
-        <div class="filters" role="group" aria-label="할 일 필터">
-          <button type="button" class="filter-btn active" data-filter="all">전체</button>
-          <button type="button" class="filter-btn" data-filter="active">진행중</button>
-          <button type="button" class="filter-btn" data-filter="completed">완료</button>
-        </div>
-        <button type="button" id="clear-completed">완료 항목 삭제</button>
-      </section>
-
-      <ul id="todo-list" class="todo-list" aria-live="polite"></ul>
-      <p id="todo-count" class="count"></p>
-
-      <section class="history">
-        <h2>최근 3일 완료 항목</h2>
-        <ul id="recent-completed-list" class="todo-list"></ul>
-        <p id="recent-completed-empty" class="count">완료한 항목이 없습니다.</p>
-      </section>
-
-      <details class="stats-collapsible">
-        <summary>최근 7일 진행률</summary>
-        <section class="stats">
-          <p id="week-summary" class="count"></p>
-          <ul id="week-chart" class="week-chart"></ul>
-        </section>
-      </details>
-    </main>
-
-    <script src="app.js"></script>
-  </body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.2">
+  <style type="text/css">
+  </style>
+</head>
+<body>
+</body>
 </html>
