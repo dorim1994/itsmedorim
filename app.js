@@ -1,5 +1,9 @@
 const STORAGE_KEY = "simple-todo-items";
 
+const projectForm = document.querySelector("#project-form");
+const projectInput = document.querySelector("#project-input");
+const projectSelect = document.querySelector("#project-select");
+const renameProjectBtn = document.querySelector("#rename-project-btn");
 const todoForm = document.querySelector("#todo-form");
 const todoInput = document.querySelector("#todo-input");
 const todoDate = document.querySelector("#todo-date");
@@ -15,6 +19,7 @@ const recentCompletedEmpty = document.querySelector("#recent-completed-empty");
 let store = loadStore();
 let selectedDate = getTodayKey();
 let currentFilter = "all";
+let selectedProjectId = store.selectedProjectId || store.projects[0].id;
 
 function toDateKey(dateObj) {
   const year = dateObj.getFullYear();
@@ -33,11 +38,19 @@ function addDays(dateKey, days) {
   return toDateKey(dateObj);
 }
 
-function makeId() {
+function makeId(prefix = "id") {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  return `todo-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+}
+
+function makeDefaultProject() {
+  return {
+    id: makeId("project"),
+    name: "기본 프로젝트",
+    todosByDate: {},
+  };
 }
 
 function normalizeItems(list) {
@@ -45,7 +58,7 @@ function normalizeItems(list) {
   return list
     .filter((item) => item && typeof item.text === "string")
     .map((item) => ({
-      id: typeof item.id === "string" ? item.id : makeId(),
+      id: typeof item.id === "string" ? item.id : makeId("todo"),
       text: item.text.trim(),
       completed: Boolean(item.completed),
       completedAt: item.completed ? item.completedAt || null : null,
@@ -53,77 +66,132 @@ function normalizeItems(list) {
     .filter((item) => item.text.length > 0);
 }
 
+function normalizeTodosByDate(inputMap) {
+  if (!inputMap || typeof inputMap !== "object" || Array.isArray(inputMap)) return {};
+  const normalizedMap = {};
+
+  Object.keys(inputMap).forEach((dateKey) => {
+    normalizedMap[dateKey] = normalizeItems(inputMap[dateKey]);
+  });
+
+  return normalizedMap;
+}
+
+function normalizeProjects(projects) {
+  if (!Array.isArray(projects)) return [];
+
+  return projects
+    .filter((project) => project && typeof project === "object")
+    .map((project) => ({
+      id: typeof project.id === "string" ? project.id : makeId("project"),
+      name:
+        typeof project.name === "string" && project.name.trim()
+          ? project.name.trim()
+          : "이름 없는 프로젝트",
+      todosByDate: normalizeTodosByDate(project.todosByDate),
+    }));
+}
+
 function loadStore() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { todosByDate: {} };
+    if (!raw) {
+      const defaultProject = makeDefaultProject();
+      return {
+        projects: [defaultProject],
+        selectedProjectId: defaultProject.id,
+      };
+    }
+
     const parsed = JSON.parse(raw);
 
-    // Legacy format migration: array -> today list
+    // Legacy format migration: array -> default project with today's items
     if (Array.isArray(parsed)) {
+      const defaultProject = makeDefaultProject();
+      defaultProject.todosByDate[getTodayKey()] = normalizeItems(parsed);
       return {
-        todosByDate: {
-          [getTodayKey()]: normalizeItems(parsed),
-        },
+        projects: [defaultProject],
+        selectedProjectId: defaultProject.id,
       };
     }
 
     if (!parsed || typeof parsed !== "object") {
-      return { todosByDate: {} };
+      const defaultProject = makeDefaultProject();
+      return {
+        projects: [defaultProject],
+        selectedProjectId: defaultProject.id,
+      };
     }
 
-    const inputMap = parsed.todosByDate;
-    if (!inputMap || typeof inputMap !== "object" || Array.isArray(inputMap)) {
-      return { todosByDate: {} };
+    // Previous version migration: { todosByDate: {...} } -> one default project
+    if (parsed.todosByDate && !parsed.projects) {
+      const defaultProject = makeDefaultProject();
+      defaultProject.todosByDate = normalizeTodosByDate(parsed.todosByDate);
+      return {
+        projects: [defaultProject],
+        selectedProjectId: defaultProject.id,
+      };
     }
 
-    const normalizedMap = {};
-    Object.keys(inputMap).forEach((dateKey) => {
-      normalizedMap[dateKey] = normalizeItems(inputMap[dateKey]);
-    });
+    const normalizedProjects = normalizeProjects(parsed.projects);
+    const projects = normalizedProjects.length > 0 ? normalizedProjects : [makeDefaultProject()];
+    const hasSelected = projects.some((project) => project.id === parsed.selectedProjectId);
 
-    return { todosByDate: normalizedMap };
+    return {
+      projects,
+      selectedProjectId: hasSelected ? parsed.selectedProjectId : projects[0].id,
+    };
   } catch {
-    return { todosByDate: {} };
+    const defaultProject = makeDefaultProject();
+    return {
+      projects: [defaultProject],
+      selectedProjectId: defaultProject.id,
+    };
   }
 }
 
 function saveStore() {
+  store.selectedProjectId = selectedProjectId;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
 }
 
 function makeTodo(text) {
   return {
-    id: makeId(),
+    id: makeId("todo"),
     text,
     completed: false,
     completedAt: null,
   };
 }
 
+function getSelectedProject() {
+  const project = store.projects.find((item) => item.id === selectedProjectId);
+  if (project) return project;
+
+  selectedProjectId = store.projects[0].id;
+  return store.projects[0];
+}
+
 function getTodosForDate(dateKey) {
-  return store.todosByDate[dateKey] || [];
+  const project = getSelectedProject();
+  return project.todosByDate[dateKey] || [];
 }
 
 function setTodosForDate(dateKey, items) {
-  store.todosByDate[dateKey] = items;
+  const project = getSelectedProject();
+  project.todosByDate[dateKey] = items;
 }
 
 function getVisibleTodos(items) {
-  if (currentFilter === "active") {
-    return items.filter((todo) => !todo.completed);
-  }
-
-  if (currentFilter === "completed") {
-    return items.filter((todo) => todo.completed);
-  }
-
+  if (currentFilter === "active") return items.filter((todo) => !todo.completed);
+  if (currentFilter === "completed") return items.filter((todo) => todo.completed);
   return items;
 }
 
 function updateCount(items) {
   const remaining = items.filter((todo) => !todo.completed).length;
-  countText.textContent = `${selectedDate} 남은 할 일 ${remaining}개`;
+  const projectName = getSelectedProject().name;
+  countText.textContent = `[${projectName}] ${selectedDate} 남은 할 일 ${remaining}개`;
 }
 
 function getRecentDays(baseDateKey, days) {
@@ -133,6 +201,18 @@ function getRecentDays(baseDateKey, days) {
 function getDayOffsetLabel(offset) {
   if (offset === 1) return "어제";
   return `${offset}일 전`;
+}
+
+function renderProjects() {
+  projectSelect.innerHTML = "";
+
+  store.projects.forEach((project) => {
+    const option = document.createElement("option");
+    option.value = project.id;
+    option.textContent = project.name;
+    if (project.id === selectedProjectId) option.selected = true;
+    projectSelect.append(option);
+  });
 }
 
 function renderRecentCompleted(days = 3) {
@@ -207,9 +287,10 @@ function renderWeeklyStats() {
 }
 
 function renderTodos() {
+  renderProjects();
+
   const dateTodos = getTodosForDate(selectedDate);
   const visibleTodos = getVisibleTodos(dateTodos);
-
   todoList.innerHTML = "";
 
   visibleTodos.forEach((todo) => {
@@ -226,19 +307,77 @@ function renderTodos() {
     const label = document.createElement("label");
     label.textContent = todo.text;
 
+    const actionWrap = document.createElement("div");
+    actionWrap.className = "todo-actions";
+
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "edit-btn";
+    editBtn.textContent = "수정";
+    editBtn.addEventListener("click", () => renameTodo(todo.id));
+
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
     deleteBtn.className = "delete-btn";
     deleteBtn.textContent = "삭제";
     deleteBtn.addEventListener("click", () => deleteTodo(todo.id));
 
-    item.append(checkbox, label, deleteBtn);
+    actionWrap.append(editBtn, deleteBtn);
+    item.append(checkbox, label, actionWrap);
     todoList.append(item);
   });
 
   updateCount(dateTodos);
   renderWeeklyStats();
   renderRecentCompleted(3);
+}
+
+function createProject(name) {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+
+  const duplicated = store.projects.some(
+    (project) => project.name.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (duplicated) {
+    alert("이미 같은 이름의 프로젝트가 있습니다.");
+    return;
+  }
+
+  const newProject = {
+    id: makeId("project"),
+    name: trimmed,
+    todosByDate: {},
+  };
+
+  store.projects.push(newProject);
+  selectedProjectId = newProject.id;
+  saveStore();
+  renderTodos();
+}
+
+function renameProject() {
+  const project = getSelectedProject();
+  const nextName = prompt("새 프로젝트 이름을 입력하세요.", project.name);
+  if (nextName === null) return;
+
+  const trimmed = nextName.trim();
+  if (!trimmed) {
+    alert("프로젝트 이름을 입력해주세요.");
+    return;
+  }
+
+  const duplicated = store.projects.some(
+    (item) => item.id !== project.id && item.name.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (duplicated) {
+    alert("이미 같은 이름의 프로젝트가 있습니다.");
+    return;
+  }
+
+  project.name = trimmed;
+  saveStore();
+  renderTodos();
 }
 
 function addTodo(text) {
@@ -264,6 +403,26 @@ function toggleTodo(id) {
   renderTodos();
 }
 
+function renameTodo(id) {
+  const items = getTodosForDate(selectedDate);
+  const target = items.find((todo) => todo.id === id);
+  if (!target) return;
+
+  const nextText = prompt("할 일 이름을 수정하세요.", target.text);
+  if (nextText === null) return;
+
+  const trimmed = nextText.trim();
+  if (!trimmed) {
+    alert("할 일 이름을 입력해주세요.");
+    return;
+  }
+
+  const updated = items.map((todo) => (todo.id === id ? { ...todo, text: trimmed } : todo));
+  setTodosForDate(selectedDate, updated);
+  saveStore();
+  renderTodos();
+}
+
 function deleteTodo(id) {
   const items = getTodosForDate(selectedDate).filter((todo) => todo.id !== id);
   setTodosForDate(selectedDate, items);
@@ -277,6 +436,21 @@ function clearCompleted() {
   saveStore();
   renderTodos();
 }
+
+projectForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  createProject(projectInput.value);
+  projectInput.value = "";
+  projectInput.focus();
+});
+
+projectSelect.addEventListener("change", () => {
+  selectedProjectId = projectSelect.value;
+  saveStore();
+  renderTodos();
+});
+
+renameProjectBtn.addEventListener("click", renameProject);
 
 todoForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -305,4 +479,5 @@ filterButtons.forEach((button) => {
 });
 
 todoDate.value = selectedDate;
+saveStore();
 renderTodos();
